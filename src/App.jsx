@@ -1,12 +1,16 @@
 import React from "react";
 import Login from "./components/Login";
+import Callback from "./components/Callback";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {
   return (
-    <div>
-      <h1>Playlist Converter</h1>
-      <Login />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/callback" element={<Callback />} />
+      </Routes>
+    </Router>
   );
 }
 
