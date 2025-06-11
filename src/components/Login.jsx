@@ -1,4 +1,5 @@
 import React from "react";
+import spotifyLogo from "../images/spotify-logo.png";
 import {
   CLIENT_ID,
   REDIRECT_URI,
@@ -32,6 +33,7 @@ const Login = () => {
 
   return (
     <div className="center-page">
+      <img src={spotifyLogo} alt="Spotify Logo" className="spotify-logo" />
       <button onClick={handleLogin}>Login with Spotify</button>
     </div>
   );
