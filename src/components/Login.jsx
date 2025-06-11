@@ -31,7 +31,7 @@ const Login = () => {
   };
 
   return (
-    <div>
+    <div className="center-page">
       <button onClick={handleLogin}>Login with Spotify</button>
     </div>
   );

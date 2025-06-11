@@ -38,7 +38,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div className="center-content">
       <h2>Logged in as: {user?.display_name || "Loading..."}</h2>
       <button onClick={handleLogout}>Logout</button>
 

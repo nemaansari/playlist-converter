@@ -1,15 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { CLIENT_ID, REDIRECT_URI, TOKEN_ENDPOINT } from "../spotifyConfig";
 
 function Callback() {
   const navigate = useNavigate();
+  const hasRun = useRef(false);
 
   useEffect(() => {
-    let ignore = false;
+    if (hasRun.current) return;
+    hasRun.current = true;
 
     const handleCallback = async () => {
-      if (ignore) return;
       const code = new URLSearchParams(window.location.search).get("code");
       const codeVerifier = sessionStorage.getItem("spotify_code_verifier");
 
@@ -48,13 +49,13 @@ function Callback() {
     };
 
     handleCallback();
-
-    return () => {
-      ignore = true;
-    };
   }, [navigate]);
 
-  return <p>Logging you in...</p>;
+  return (
+    <div className="center-page">
+      <p>Logging you in...</p>
+    </div>
+  );
 }
 
 export default Callback;
