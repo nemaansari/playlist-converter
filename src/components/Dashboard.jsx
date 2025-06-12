@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
+  const [playlists, setPlaylists] = useState([]);
+
   const token = localStorage.getItem("spotify_access_token");
 
   useEffect(() => {
@@ -25,6 +27,17 @@ const Dashboard = () => {
           localStorage.removeItem("spotify_access_token");
           window.location.reload();
         });
+
+      fetch("https://api.spotify.com/v1/me/playlists?limit=20", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setPlaylists(data.items || []);
+        })
+        .catch((err) => {
+          console.log("Playlist fetch error", err);
+        });
     }
   }, [token]);
 
@@ -42,8 +55,29 @@ const Dashboard = () => {
       <h2>Logged in as: {user?.display_name || "Loading..."}</h2>
       <button onClick={handleLogout}>Logout</button>
 
-      <div style={{ marginTop: "20px" }}>
-        <p>Playlist converter coming soon...</p>
+      <div style={{ marginTop: "30px" }}>
+        <h3>Your Playlists ({playlists.length})</h3>
+        {playlists.length === 0 ? (
+          <p>Loading playlists...</p>
+        ) : (
+          <div>
+            {playlists.map((playlist) => (
+              <div
+                key={playlist.id}
+                style={{
+                  margin: "10px 0",
+                  padding: "10px",
+                  border: "1px solid #ccc",
+                  borderRadius: "5px",
+                }}
+              >
+                <h4>{playlist.name}</h4>
+                <p>{playlist.tracks.total} tracks</p>
+                <button>Convert</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
