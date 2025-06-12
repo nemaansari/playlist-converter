@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [playlists, setPlaylists] = useState([]);
+  const navigate = useNavigate();
 
   const token = localStorage.getItem("spotify_access_token");
 
@@ -73,7 +75,15 @@ const Dashboard = () => {
               >
                 <h4>{playlist.name}</h4>
                 <p>{playlist.tracks.total} tracks</p>
-                <button>Convert</button>
+                <button
+                  onClick={() =>
+                    navigate(`/convert/${playlist.id}`, {
+                      state: { name: playlist.name },
+                    })
+                  }
+                >
+                  Convert
+                </button>
               </div>
             ))}
           </div>
