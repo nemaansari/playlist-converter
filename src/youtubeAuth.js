@@ -28,31 +28,30 @@ export const loginToYouTube = async () => {
   window.location.href = authUrl;
 };
 
-
 export const handleYouTubeCallback = async (code) => {
-    const codeVerifier = sessionStorage.getItem('youtube_code_verifier');
-    
-    const response = await fetch(YOUTUBE_TOKEN_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: YOUTUBE_REDIRECT_URI,
-        client_id: YOUTUBE_CLIENT_ID,
-        code_verifier: codeVerifier,
-      }),
-    });
-  
-    const data = await response.json();
-    
-    if (data.access_token) {
-      localStorage.setItem('youtube_access_token', data.access_token);
-      sessionStorage.removeItem('youtube_code_verifier');
-      return true;
-    }
-    return false;
-  };
+  const codeVerifier = sessionStorage.getItem("youtube_code_verifier");
+
+  const response = await fetch(YOUTUBE_TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: YOUTUBE_REDIRECT_URI,
+      client_id: YOUTUBE_CLIENT_ID,
+      code_verifier: codeVerifier,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (data.access_token) {
+    localStorage.setItem("youtube_access_token", data.access_token);
+    sessionStorage.removeItem("youtube_code_verifier");
+    return true;
+  }
+  return false;
+};
 
 function generateCodeVerifier() {
   return btoa(

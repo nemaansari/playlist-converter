@@ -17,14 +17,14 @@ function YouTubeCallback() {
       try {
         const success = await handleYouTubeCallback(code);
         if (success) {
-          console.log('YouTube login successful!');
-          navigate(-1); 
+          console.log("YouTube login successful!");
+          navigate(-1);
         } else {
-          console.error('YouTube login failed');
+          console.error("YouTube login failed");
           navigate("/");
         }
       } catch (error) {
-        console.error('YouTube callback error:', error);
+        console.error("YouTube callback error:", error);
         navigate("/");
       }
     };
