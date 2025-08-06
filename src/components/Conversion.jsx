@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { searchYouTube } from "../youtubeSearch";
+import { isYouTubeLoggedIn, loginToYouTube } from "../youtubeAuth";
 
 const Conversion = () => {
   const { playlistId } = useParams();
@@ -71,6 +72,17 @@ const Conversion = () => {
 
       <h2>Converting: {playlistName}</h2>
       <p>Found {tracks.length} tracks</p>
+
+      <div style={{ marginTop: "20px" }}>
+        {isYouTubeLoggedIn() ? (
+          <p>✅ Connected to YouTube</p>
+        ) : (
+          <div>
+            <p>❌ Not connected to YouTube</p>
+            <button onClick={loginToYouTube}>Login to YouTube</button>
+          </div>
+        )}
+      </div>
 
       {tracks.length > 0 && (
         <div style={{ marginTop: "20px" }}>

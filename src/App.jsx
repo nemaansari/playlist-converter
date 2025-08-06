@@ -5,6 +5,7 @@ import Callback from "./components/Callback";
 import Conversion from "./components/Conversion";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // http://127.0.0.1:5173/
+import YouTubeCallback from "./components/YouTubeCallback";
 
 function App() {
   const isLoggedIn = localStorage.getItem("spotify_access_token");
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={isLoggedIn ? <Dashboard /> : <Login />} />
         <Route path="/callback" element={<Callback />} />
         <Route path="/convert/:playlistId" element={<Conversion />} />
+        <Route path="/youtube-callback" element={<YouTubeCallback />} />
       </Routes>
     </Router>
   );
