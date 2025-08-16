@@ -8,7 +8,10 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import YouTubeCallback from "./components/YouTubeCallback";
 
 function App() {
-  const isLoggedIn = localStorage.getItem("spotify_access_token");
+  const spotifyToken = localStorage.getItem("spotify_access_token");
+  const youtubeToken = localStorage.getItem("youtube_access_token");
+
+  const isLoggedIn = spotifyToken && youtubeToken;
 
   console.log("App.jsx - Token check:", !!isLoggedIn);
   console.log("App.jsx - Will show:", isLoggedIn ? "Dashboard" : "Login");

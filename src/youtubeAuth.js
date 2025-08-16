@@ -1,5 +1,6 @@
 import {
   YOUTUBE_CLIENT_ID,
+  YOUTUBE_CLIENT_SECRET,
   YOUTUBE_REDIRECT_URI,
   YOUTUBE_AUTH_ENDPOINT,
   YOUTUBE_TOKEN_ENDPOINT,
@@ -11,63 +12,105 @@ export const isYouTubeLoggedIn = () => {
 };
 
 export const loginToYouTube = async () => {
-  const codeVerifier = generateCodeVerifier();
-  const codeChallenge = await generateCodeChallenge(codeVerifier);
-
-  sessionStorage.setItem("youtube_code_verifier", codeVerifier);
-
   const authUrl =
     `${YOUTUBE_AUTH_ENDPOINT}?` +
     `client_id=${YOUTUBE_CLIENT_ID}&` +
     `redirect_uri=${encodeURIComponent(YOUTUBE_REDIRECT_URI)}&` +
     `response_type=code&` +
-    `scope=${encodeURIComponent(YOUTUBE_SCOPES.join(" "))}&` +
-    `code_challenge=${codeChallenge}&` +
-    `code_challenge_method=S256`;
+    `scope=${encodeURIComponent(YOUTUBE_SCOPES.join(" "))}`;
 
   window.location.href = authUrl;
 };
 
 export const handleYouTubeCallback = async (code) => {
-  const codeVerifier = sessionStorage.getItem("youtube_code_verifier");
+  try {
+    console.log("Exchanging code for token...");
+    console.log("Code:", code);
+    console.log("Redirect URI:", YOUTUBE_REDIRECT_URI);
 
-  const response = await fetch(YOUTUBE_TOKEN_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: YOUTUBE_REDIRECT_URI,
+    const params = new URLSearchParams({
+      code: code,
       client_id: YOUTUBE_CLIENT_ID,
-      code_verifier: codeVerifier,
-    }),
-  });
+      client_secret: YOUTUBE_CLIENT_SECRET,
+      redirect_uri: YOUTUBE_REDIRECT_URI,
+      grant_type: "authorization_code",
+    });
 
-  const data = await response.json();
+    const response = await fetch(YOUTUBE_TOKEN_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params,
+    });
 
-  if (data.access_token) {
+    const data = await response.json();
+
+    if (data.error) {
+      console.error("YouTube OAuth Error:", data);
+      return false;
+    }
+
     localStorage.setItem("youtube_access_token", data.access_token);
-    sessionStorage.removeItem("youtube_code_verifier");
+    if (data.refresh_token) {
+      localStorage.setItem("youtube_refresh_token", data.refresh_token);
+    }
+    localStorage.setItem(
+      "youtube_token_expiry",
+      Date.now() + data.expires_in * 1000,
+    );
+
     return true;
+  } catch (error) {
+    console.error("YouTube OAuth Error:", error);
+    return false;
   }
-  return false;
 };
 
-function generateCodeVerifier() {
-  return btoa(
-    String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))),
-  )
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-}
+export const logoutFromYouTube = () => {
+  localStorage.removeItem("youtube_access_token");
+  localStorage.removeItem("youtube_refresh_token");
+};
 
-async function generateCodeChallenge(verifier) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-}
+export const getYouTubeAccessToken = () => {
+  return localStorage.getItem("youtube_access_token");
+};
+
+export const refreshYouTubeToken = async () => {
+  const refreshToken = localStorage.getItem("youtube_refresh_token");
+
+  if (!refreshToken) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(YOUTUBE_TOKEN_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: YOUTUBE_CLIENT_ID,
+        client_secret: YOUTUBE_CLIENT_SECRET,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.access_token) {
+      localStorage.setItem("youtube_access_token", data.access_token);
+
+      if (data.refresh_token) {
+        localStorage.setItem("youtube_refresh_token", data.refresh_token);
+      }
+
+      return true;
+    } else {
+      logoutFromYouTube();
+      return false;
+    }
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    return false;
+  }
+};

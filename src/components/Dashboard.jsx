@@ -6,12 +6,13 @@ const Dashboard = () => {
   const [playlists, setPlaylists] = useState([]);
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("spotify_access_token");
+  const spotifyToken = localStorage.getItem("spotify_access_token");
+  const youtubeToken = localStorage.getItem("youtube_access_token");
 
   useEffect(() => {
-    if (token) {
+    if (spotifyToken) {
       fetch("https://api.spotify.com/v1/me", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${spotifyToken}` },
       })
         .then((res) => {
           console.log("API status:", res.status);
@@ -31,7 +32,7 @@ const Dashboard = () => {
         });
 
       fetch("https://api.spotify.com/v1/me/playlists?limit=20", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${spotifyToken}` },
       })
         .then((res) => res.json())
         .then((data) => {
@@ -41,15 +42,15 @@ const Dashboard = () => {
           console.log("Playlist fetch error", err);
         });
     }
-  }, [token]);
+  }, [spotifyToken]);
 
   const handleLogout = () => {
-    localStorage.removeItem(`spotify_access_token`);
+    localStorage.removeItem("spotify_access_token");
     window.location.reload();
   };
 
-  if (!token) {
-    return <div>Please log in</div>;
+  if (!spotifyToken || !youtubeToken) {
+    return <div>Please log in to both Spotify and YouTube</div>;
   }
 
   return (

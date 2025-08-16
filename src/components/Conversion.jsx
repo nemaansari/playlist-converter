@@ -41,6 +41,12 @@ const Conversion = () => {
     fetchTracks();
   }, [playlistId, token, navigate]);
 
+  const handleYouTubeLogin = () => {
+    sessionStorage.setItem("youtube_return_playlist", playlistId);
+    sessionStorage.setItem("youtube_return_playlist_name", playlistName);
+    loginToYouTube();
+  };
+
   const testYouTubeSearch = async () => {
     console.log("Testing first 3 tracks...");
     const results = [];
@@ -79,12 +85,12 @@ const Conversion = () => {
         ) : (
           <div>
             <p>❌ Not connected to YouTube</p>
-            <button onClick={loginToYouTube}>Login to YouTube</button>
+            <button onClick={handleYouTubeLogin}>Login to YouTube</button>
           </div>
         )}
       </div>
 
-      {tracks.length > 0 && (
+      {tracks.length > 0 && isYouTubeLoggedIn() && (
         <div style={{ marginTop: "20px" }}>
           <button onClick={testYouTubeSearch}>
             Test YouTube Search (First 3 Tracks)
@@ -117,6 +123,7 @@ const Conversion = () => {
       )}
 
       <div style={{ marginTop: "20px" }}>
+        <h3>Track List:</h3>
         {tracks.slice(0, 5).map((item, index) => (
           <p key={index}>
             {item.track.name} - {item.track.artists[0].name}
