@@ -60,23 +60,51 @@ const Login = () => {
       >
         {!spotifyToken && (
           <div>
-            <img
-              src={spotifyLogo}
-              alt="Spotify Logo"
-              className="spotify-logo"
-              style={{ height: "40px", marginBottom: "10px" }}
-            />
+            <div
+              style={{
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "10px",
+              }}
+            >
+              <img
+                src={spotifyLogo}
+                alt="Spotify Logo"
+                className="spotify-logo"
+                style={{
+                  height: "100%",
+                  width: "auto",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
             <button onClick={handleSpotifyLogin}>Login with Spotify</button>
           </div>
         )}
 
         {spotifyToken && !youtubeToken && (
           <div>
-            <img
-              src={youtubeLogo}
-              alt="YouTube Logo"
-              style={{ height: "40px", marginBottom: "10px" }}
-            />
+            <div
+              style={{
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "10px",
+              }}
+            >
+              <img
+                src={youtubeLogo}
+                alt="YouTube Logo"
+                style={{
+                  height: "100%",
+                  width: "auto",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
             <button onClick={loginToYouTube}>Login with YouTube</button>
           </div>
         )}
