@@ -37,6 +37,11 @@ function Callback() {
         if (data.access_token) {
           localStorage.setItem("spotify_access_token", data.access_token);
           sessionStorage.removeItem("spotify_code_verifier");
+
+          // Trigger a custom event to notify other components of token change
+          window.dispatchEvent(new CustomEvent("tokenUpdate"));
+
+          // Navigate back to main page
           navigate("/");
         } else {
           console.error("No access token received:", data);

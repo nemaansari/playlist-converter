@@ -111,6 +111,9 @@ export const handleYouTubeCallback = async (code) => {
       Date.now() + data.expires_in * 1000,
     );
 
+    // Trigger a custom event to notify other components of token change
+    window.dispatchEvent(new CustomEvent("tokenUpdate"));
+
     console.log("Token stored successfully, testing token...");
 
     // Test the token immediately after storing

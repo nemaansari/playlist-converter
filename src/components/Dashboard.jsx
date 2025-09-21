@@ -54,41 +54,54 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="center-content">
-      <h2>Logged in as: {user?.display_name || "Loading..."}</h2>
-      <button onClick={handleLogout}>Logout</button>
+    <div className="center-page">
+      <div className="glass-card text-center">
+        <h2>Welcome back, {user?.display_name || "Loading..."}!</h2>
+        <p>Ready to convert your playlists to YouTube?</p>
+        <button onClick={handleLogout} className="secondary mt-2">
+          Logout
+        </button>
+      </div>
 
-      <div style={{ marginTop: "30px" }}>
-        <h3>Your Playlists ({playlists.length})</h3>
-        {playlists.length === 0 ? (
-          <p>Loading playlists...</p>
-        ) : (
-          <div>
-            {playlists.map((playlist) => (
-              <div
-                key={playlist.id}
-                style={{
-                  margin: "10px 0",
-                  padding: "10px",
-                  border: "1px solid #ccc",
-                  borderRadius: "5px",
-                }}
-              >
-                <h4>{playlist.name}</h4>
-                <p>{playlist.tracks.total} tracks</p>
-                <button
-                  onClick={() =>
-                    navigate(`/convert/${playlist.id}`, {
-                      state: { name: playlist.name },
-                    })
-                  }
-                >
-                  Convert
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="dashboard-grid">
+        <div className="glass-card">
+          <h3>Your Spotify Playlists</h3>
+          <p className="text-muted mb-3">
+            {playlists.length} playlist{playlists.length !== 1 ? "s" : ""} found
+          </p>
+
+          {playlists.length === 0 ? (
+            <div className="loading">
+              <p>Loading your playlists...</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {playlists.map((playlist) => (
+                <div key={playlist.id} className="playlist-card">
+                  <div className="flex justify-between items-center">
+                    <div className="text-left">
+                      <h4 className="mb-1">{playlist.name}</h4>
+                      <p className="text-muted">
+                        {playlist.tracks.total} track
+                        {playlist.tracks.total !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        navigate(`/convert/${playlist.id}`, {
+                          state: { name: playlist.name },
+                        })
+                      }
+                      className="youtube"
+                    >
+                      Convert to YouTube
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

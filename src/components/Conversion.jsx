@@ -236,231 +236,268 @@ const Conversion = () => {
   if (loading) return <div>Loading tracks...</div>;
 
   return (
-    <div className="center-content">
-      <button onClick={() => navigate("/")}>← Back to Playlists</button>
-
-      <h2>Converting: {playlistName}</h2>
-      <p>Found {tracks.length} tracks</p>
-
-      <div style={{ marginTop: "20px" }}>
-        {isYouTubeLoggedIn() ? (
-          <div>
-            <p>✅ Connected to YouTube</p>
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-              <button
-                onClick={async () => {
-                  console.log("Testing YouTube token...");
-                  const test = await testYouTubeToken();
-                  console.log("Token test result:", test);
-                  if (test.valid) {
-                    alert("YouTube token is valid!");
-                  } else {
-                    alert(`YouTube token error: ${test.error}`);
-                  }
-                }}
-                style={{ fontSize: "12px", padding: "5px 10px" }}
-              >
-                Test YouTube Connection
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm("Clear YouTube authentication and re-login?")) {
-                    clearYouTubeAuth();
-                    window.location.reload();
-                  }
-                }}
-                style={{
-                  fontSize: "12px",
-                  padding: "5px 10px",
-                  backgroundColor: "#dc3545",
-                  color: "white",
-                  border: "none",
-                }}
-              >
-                Clear YouTube Auth
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <p>❌ Not connected to YouTube</p>
-            <button onClick={handleYouTubeLogin}>Login to YouTube</button>
-          </div>
-        )}
+    <div className="center-page">
+      <div className="flex items-center gap-2 mb-4">
+        <button onClick={() => navigate("/")} className="secondary">
+          ← Back to Playlists
+        </button>
       </div>
 
-      {tracks.length > 0 && isYouTubeLoggedIn() && (
-        <div style={{ marginTop: "20px" }}>
-          <button
-            onClick={testYouTubeSearch}
-            disabled={conversionState.isConverting}
-          >
-            Test YouTube Search (First 3 Tracks)
-          </button>
+      <div className="glass-card">
+        <h2>Converting: {playlistName}</h2>
+        <p className="text-muted">Found {tracks.length} tracks</p>
 
-          <div style={{ marginTop: "10px" }}>
-            <button
-              onClick={convertPlaylist}
-              disabled={conversionState.isConverting}
-              style={{
-                backgroundColor: conversionState.isConverting
-                  ? "#6c757d"
-                  : "#007bff",
-                color: "white",
-                padding: "10px 20px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: conversionState.isConverting
-                  ? "not-allowed"
-                  : "pointer",
-              }}
-            >
-              {conversionState.isConverting
-                ? `Converting... ${conversionState.progress}%`
-                : "Convert to YouTube Playlist"}
-            </button>
-          </div>
-
-          {conversionState.isConverting && (
-            <div style={{ marginTop: "10px" }}>
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#e9ecef",
-                  borderRadius: "4px",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    width: `${conversionState.progress}%`,
-                    height: "20px",
-                    backgroundColor: "#007bff",
-                    transition: "width 0.3s ease",
+        <div className="mt-4">
+          {isYouTubeLoggedIn() ? (
+            <div className="text-center">
+              <div className="status-success mb-3">
+                <span>✅</span>
+                <span>Connected to YouTube</span>
+              </div>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={async () => {
+                    console.log("Testing YouTube token...");
+                    const test = await testYouTubeToken();
+                    console.log("Token test result:", test);
+                    if (test.valid) {
+                      alert("YouTube token is valid!");
+                    } else {
+                      alert(`YouTube token error: ${test.error}`);
+                    }
                   }}
-                />
-              </div>
-              <p>
-                Converting {conversionState.results.length} of {tracks.length}{" "}
-                tracks...
-              </p>
-            </div>
-          )}
-
-          {conversionState.error && (
-            <div
-              style={{
-                marginTop: "10px",
-                padding: "10px",
-                backgroundColor: "#f8d7da",
-                color: "#721c24",
-                border: "1px solid #f5c6cb",
-                borderRadius: "4px",
-              }}
-            >
-              <strong>Error:</strong> {conversionState.error}
-            </div>
-          )}
-
-          {conversionState.playlistId && !conversionState.isConverting && (
-            <div
-              style={{
-                marginTop: "10px",
-                padding: "10px",
-                backgroundColor: "#d4edda",
-                color: "#155724",
-                border: "1px solid #c3e6cb",
-                borderRadius: "4px",
-              }}
-            >
-              <strong>✅ Conversion Complete!</strong>
-              <br />
-              <a
-                href={`https://www.youtube.com/playlist?list=${conversionState.playlistId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#155724", textDecoration: "underline" }}
-              >
-                View Your New YouTube Playlist
-              </a>
-            </div>
-          )}
-
-          {conversionState.results.length > 0 && (
-            <div style={{ marginTop: "20px" }}>
-              <h4>Conversion Results:</h4>
-              <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-                {conversionState.results.map((result, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      margin: "5px 0",
-                      padding: "8px",
-                      border: "1px solid #ccc",
-                      borderRadius: "4px",
-                      backgroundColor:
-                        result.status === "success"
-                          ? "#d4edda"
-                          : result.status === "not-found"
-                            ? "#fff3cd"
-                            : "#f8d7da",
-                    }}
-                  >
-                    <div>
-                      <strong>Track:</strong> {result.track}
-                    </div>
-                    {result.youtubeTitle && (
-                      <div>
-                        <strong>YouTube Match:</strong> {result.youtubeTitle}
-                      </div>
-                    )}
-                    <div>
-                      <strong>Status:</strong>
-                      {result.status === "success" && " ✅ Added to playlist"}
-                      {result.status === "not-found" && " ⚠️ No match found"}
-                      {result.status === "error" &&
-                        ` ❌ Error: ${result.error}`}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {testResult && Array.isArray(testResult) && (
-            <div style={{ marginTop: "10px" }}>
-              <h4>Search Results:</h4>
-              {testResult.map((result, index) => (
-                <div
-                  key={index}
+                  className="secondary"
+                  style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}
+                >
+                  Test Connection
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Clear YouTube authentication and re-login?")) {
+                      clearYouTubeAuth();
+                      window.location.reload();
+                    }
+                  }}
+                  className="secondary"
                   style={{
-                    margin: "5px 0",
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    backgroundColor: result.success ? "#d4edda" : "#f8d7da",
+                    fontSize: "0.875rem",
+                    padding: "0.5rem 1rem",
+                    background: "var(--accent-red)",
                   }}
                 >
-                  <div>
-                    <strong>Original:</strong> {result.original}
-                  </div>
-                  <div>
-                    <strong>Found:</strong> {result.found}
-                  </div>
-                </div>
-              ))}
+                  Clear Auth
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="status-error mb-3">
+                <span>❌</span>
+                <span>Not connected to YouTube</span>
+              </div>
+              <button onClick={handleYouTubeLogin} className="youtube">
+                Connect to YouTube
+              </button>
             </div>
           )}
         </div>
-      )}
 
-      <div style={{ marginTop: "20px" }}>
-        <h3>Track List:</h3>
-        {tracks.slice(0, 5).map((item, index) => (
-          <p key={index}>
-            {item.track.name} - {item.track.artists[0].name}
-          </p>
-        ))}
-        {tracks.length > 5 && <p>... and {tracks.length - 5} more</p>}
+        {tracks.length > 0 && isYouTubeLoggedIn() && (
+          <div className="mt-4">
+            <button
+              onClick={testYouTubeSearch}
+              disabled={conversionState.isConverting}
+              className="secondary mb-3"
+            >
+              Test YouTube Search (First 3 Tracks)
+            </button>
+
+            <div className="flex justify-center">
+              <button
+                onClick={convertPlaylist}
+                disabled={conversionState.isConverting}
+                className={`youtube ${conversionState.isConverting ? "loading" : ""}`}
+                style={{
+                  cursor: conversionState.isConverting
+                    ? "not-allowed"
+                    : "pointer",
+                }}
+              >
+                {conversionState.isConverting
+                  ? `Converting... ${conversionState.progress}%`
+                  : "Convert to YouTube Playlist"}
+              </button>
+            </div>
+
+            {conversionState.isConverting && (
+              <div className="progress-container mt-4">
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${conversionState.progress}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-center text-muted">
+                  Converting {conversionState.results.length} of {tracks.length}{" "}
+                  tracks...
+                </p>
+              </div>
+            )}
+
+            {conversionState.error && (
+              <div
+                className="glass-card mt-4"
+                style={{
+                  background: "rgba(255, 0, 0, 0.1)",
+                  borderColor: "var(--accent-red)",
+                }}
+              >
+                <div className="status-error">
+                  <span>❌</span>
+                  <span>
+                    <strong>Error:</strong> {conversionState.error}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {conversionState.playlistId && !conversionState.isConverting && (
+              <div
+                className="glass-card mt-4"
+                style={{
+                  background: "rgba(29, 185, 84, 0.1)",
+                  borderColor: "var(--accent-green)",
+                }}
+              >
+                <div className="status-success text-center">
+                  <span>✅</span>
+                  <div>
+                    <strong>Conversion Complete!</strong>
+                    <br />
+                    <a
+                      href={`https://www.youtube.com/playlist?list=${conversionState.playlistId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "var(--accent-green)",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      View Your New YouTube Playlist
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {conversionState.results.length > 0 && (
+              <div className="glass-card mt-4">
+                <h4 className="mb-3">Conversion Results:</h4>
+                <div
+                  style={{ maxHeight: "300px", overflowY: "auto" }}
+                  className="flex flex-col gap-2"
+                >
+                  {conversionState.results.map((result, index) => (
+                    <div
+                      key={index}
+                      className="glass-card"
+                      style={{
+                        background:
+                          result.status === "success"
+                            ? "rgba(29, 185, 84, 0.1)"
+                            : result.status === "not-found"
+                              ? "rgba(255, 193, 7, 0.1)"
+                              : "rgba(255, 0, 0, 0.1)",
+                        borderColor:
+                          result.status === "success"
+                            ? "var(--accent-green)"
+                            : result.status === "not-found"
+                              ? "#ffc107"
+                              : "var(--accent-red)",
+                      }}
+                    >
+                      <div className="text-left">
+                        <div>
+                          <strong>Track:</strong> {result.track}
+                        </div>
+                        {result.youtubeTitle && (
+                          <div>
+                            <strong>YouTube Match:</strong>{" "}
+                            {result.youtubeTitle}
+                          </div>
+                        )}
+                        <div
+                          className={
+                            result.status === "success"
+                              ? "status-success"
+                              : result.status === "not-found"
+                                ? "status-warning"
+                                : "status-error"
+                          }
+                        >
+                          <strong>Status:</strong>
+                          {result.status === "success" &&
+                            " ✅ Added to playlist"}
+                          {result.status === "not-found" &&
+                            " ⚠️ No match found"}
+                          {result.status === "error" &&
+                            ` ❌ Error: ${result.error}`}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {testResult && Array.isArray(testResult) && (
+              <div className="glass-card mt-4">
+                <h4 className="mb-3">Search Results:</h4>
+                <div className="flex flex-col gap-2">
+                  {testResult.map((result, index) => (
+                    <div
+                      key={index}
+                      className="glass-card"
+                      style={{
+                        background: result.success
+                          ? "rgba(29, 185, 84, 0.1)"
+                          : "rgba(255, 0, 0, 0.1)",
+                        borderColor: result.success
+                          ? "var(--accent-green)"
+                          : "var(--accent-red)",
+                      }}
+                    >
+                      <div className="text-left">
+                        <div>
+                          <strong>Original:</strong> {result.original}
+                        </div>
+                        <div>
+                          <strong>Found:</strong> {result.found}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="glass-card mt-4">
+          <h3 className="mb-3">Track Preview:</h3>
+          <div className="text-left">
+            {tracks.slice(0, 5).map((item, index) => (
+              <p key={index} className="mb-1">
+                {item.track.name} - {item.track.artists[0].name}
+              </p>
+            ))}
+            {tracks.length > 5 && (
+              <p className="text-muted">
+                ... and {tracks.length - 5} more tracks
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
