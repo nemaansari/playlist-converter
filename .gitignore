@@ -18,6 +18,9 @@ dist-ssr
 .idea
 .DS_Store
 *.suo
+
+# AI assistant instructions (keep local only)
+.github/copilot-instructions.md
 *.ntvs*
 *.njsproj
 *.sln
