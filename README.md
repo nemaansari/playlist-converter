@@ -49,7 +49,7 @@ A modern React web app to seamlessly convert your Spotify playlists to YouTube, 
 ## 📸 Screenshots
 
 ### Login Page
-![Login with glassmorphism UI](./public/screenshots/login.png)
+![Login with glassmorphism UI](./public/screenshots/login1.png)
 
 ### Dashboard
 ![Playlist selection dashboard](./public/screenshots/dashboard.png)
