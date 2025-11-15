@@ -1,0 +1,21 @@
+{
+  "name": "playlist-converter-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Playlist Converter - handles OAuth and API proxying",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": ["spotify", "youtube", "oauth", "api"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "cookie-parser": "^1.4.6",
+    "express-session": "^1.17.3"
+  }
+}
