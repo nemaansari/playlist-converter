@@ -1,22 +1,62 @@
-export const sessionStore = new Map();
+import { createClient } from 'redis';
 
-export function getUserSession(sessionToken) {
-  return sessionStore.get(sessionToken);
+const redisClient = createClient({
+  url: 'redis://localhost:6379'
+});
+
+redisClient.on('error', (err) => console.error('Redis Client Error:', err));
+redisClient.on('connect', () => console.log('✅ Connected to Redis'));
+
+await redisClient.connect();
+
+const SESSION_TTL = 24 * 60 * 60; // 24 hours
+
+export async function getUserSession(sessionToken) {
+  try {
+    const data = await redisClient.get(`session:${sessionToken}`);
+    return data ? JSON.parse(data) : undefined;
+  } catch (error) {
+    console.error('Error getting session:', error);
+    return undefined;
+  }
 }
 
-export function setUserSession(sessionToken, sessionData) {
-  sessionStore.set(sessionToken, sessionData);
+export async function setUserSession(sessionToken, sessionData) {
+  try {
+    await redisClient.setEx(
+      `session:${sessionToken}`,
+      SESSION_TTL,
+      JSON.stringify(sessionData)
+    );
+  } catch (error) {
+    console.error('Error setting session:', error);
+  }
 }
 
-export function updateUserSession(sessionToken, updates) {
-  const existing = sessionStore.get(sessionToken) || {};
-  sessionStore.set(sessionToken, { ...existing, ...updates });
+export async function updateUserSession(sessionToken, updates) {
+  try {
+    const existing = await getUserSession(sessionToken);
+    const updated = { ...existing, ...updates };
+    await setUserSession(sessionToken, updated);
+  } catch (error) {
+    console.error('Error updating session:', error);
+  }
 }
 
-export function deleteUserSession(sessionToken) {
-  sessionStore.delete(sessionToken);
+export async function deleteUserSession(sessionToken) {
+  try {
+    await redisClient.del(`session:${sessionToken}`);
+  } catch (error) {
+    console.error('Error deleting session:', error);
+  }
 }
 
-export function getSessionCount() {
-  return sessionStore.size;
+export async function getSessionCount() {
+  try {
+    const keys = await redisClient.keys('session:*');
+    return keys.length;
+  } catch (error) {
+    console.error('Error getting session count:', error);
+    return 0;
+  }
 }

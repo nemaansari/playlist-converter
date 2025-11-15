@@ -106,14 +106,14 @@ router.get('/youtube/callback', async (req, res) => {
     }
     
     // Store YouTube token in session store
-    updateUserSession(sessionToken, {
+    await updateUserSession(sessionToken, {
       youtube_access_token: data.access_token,
       youtube_refresh_token: data.refresh_token,
       youtube_token_expiry: Date.now() + (data.expires_in * 1000)
     });
     
     console.log('YouTube token received, storing with session token:', sessionToken);
-    console.log('Session store now has:', getSessionCount(), 'sessions');
+    console.log('Session store now has:', await getSessionCount(), 'sessions');
     
     req.session.save((err) => {
       if (err) {
@@ -132,21 +132,21 @@ router.get('/youtube/callback', async (req, res) => {
   }
 });
 
-router.get('/youtube/status', (req, res) => {
+router.get('/youtube/status', async (req, res) => {
   // Try to get session token from multiple sources
   const sessionToken = req.session.sessionToken || 
                        req.headers['x-session-token'] || 
                        req.query.session_token;
   
   console.log('YouTube Status check - Session Token:', sessionToken);
-  console.log('YouTube Status check - Session Store has:', getSessionCount(), 'sessions');
+  console.log('YouTube Status check - Session Store has:', await getSessionCount(), 'sessions');
   
   if (!sessionToken) {
     console.log('No session token in request');
     return res.json({ authenticated: false });
   }
   
-  const userSession = getUserSession(sessionToken);
+  const userSession = await getUserSession(sessionToken);
   console.log('YouTube Status check - User session found:', !!userSession);
   
   if (userSession) {

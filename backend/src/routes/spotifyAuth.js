@@ -124,14 +124,14 @@ router.get('/spotify/callback', async (req, res) => {
     const sessionToken = req.session.sessionToken;
     
     // Store Spotify token in our session store
-    updateUserSession(sessionToken, {
+    await updateUserSession(sessionToken, {
       spotify_access_token: data.access_token,
       spotify_refresh_token: data.refresh_token,
       spotify_token_expiry: Date.now() + (data.expires_in * 1000)
     });
     
     console.log('Token received, storing with session token:', sessionToken);
-    console.log('Session store now has:', getSessionCount(), 'sessions');
+    console.log('Session store now has:', await getSessionCount(), 'sessions');
     
     // Save session and redirect with session token
     req.session.save((err) => {
@@ -152,7 +152,7 @@ router.get('/spotify/callback', async (req, res) => {
   }
 });
 
-router.get('/spotify/status', (req, res) => {
+router.get('/spotify/status', async (req, res) => {
   // Try to get session token from multiple sources
   const sessionToken = req.session.sessionToken || 
                        req.headers['x-session-token'] || 
@@ -160,14 +160,14 @@ router.get('/spotify/status', (req, res) => {
   
   console.log('Status check - Session ID:', req.sessionID);
   console.log('Status check - Session Token:', sessionToken);
-  console.log('Status check - Session Store has:', getSessionCount(), 'sessions');
+  console.log('Status check - Session Store has:', await getSessionCount(), 'sessions');
   
   if (!sessionToken) {
     console.log('No session token in request');
     return res.json({ authenticated: false });
   }
   
-  const userSession = getUserSession(sessionToken);
+  const userSession = await getUserSession(sessionToken);
   console.log('Status check - User session found:', !!userSession);
   
   if (userSession) {
@@ -191,10 +191,10 @@ router.get('/spotify/status', (req, res) => {
   });
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   const sessionToken = req.session.sessionToken;
   if (sessionToken) {
-    deleteUserSession(sessionToken);
+    await deleteUserSession(sessionToken);
   }
   req.session.destroy((err) => {
     if (err) {
@@ -214,7 +214,7 @@ router.get('/spotify/me', async (req, res) => {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
-  const userSession = getUserSession(sessionToken);
+  const userSession = await getUserSession(sessionToken);
   
   if (!userSession || !userSession.spotify_access_token) {
     return res.status(401).json({ error: 'No Spotify token found' });
@@ -249,7 +249,7 @@ router.get('/spotify/playlists', async (req, res) => {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
-  const userSession = getUserSession(sessionToken);
+  const userSession = await getUserSession(sessionToken);
   
   if (!userSession || !userSession.spotify_access_token) {
     return res.status(401).json({ error: 'No Spotify token found' });
@@ -285,7 +285,7 @@ router.get('/spotify/playlist/:playlistId/tracks', async (req, res) => {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
-  const userSession = getUserSession(sessionToken);
+  const userSession = await getUserSession(sessionToken);
   
   if (!userSession || !userSession.spotify_access_token) {
     return res.status(401).json({ error: 'No Spotify token found' });
