@@ -2,75 +2,79 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import spotifyLogo from "../images/spotify-logo.png";
 import youtubeLogo from "../images/youtube-logo.png";
-import {
-  CLIENT_ID,
-  REDIRECT_URI,
-  AUTH_ENDPOINT,
-  SCOPES,
-} from "../spotifyConfig";
-import { loginToYouTube } from "../youtubeAuth";
+
+const API_BASE = 'http://localhost:3000';
 
 const Login = () => {
   const navigate = useNavigate();
 
-  // State to track authentication tokens
-  const [spotifyToken, setSpotifyToken] = useState(
-    localStorage.getItem("spotify_access_token"),
-  );
-  const [youtubeToken, setYoutubeToken] = useState(
-    localStorage.getItem("youtube_access_token"),
-  );
+  const [spotifyAuth, setSpotifyAuth] = useState(false);
+  const [youtubeAuth, setYoutubeAuth] = useState(false);
 
-  // Monitor localStorage changes for token updates
   useEffect(() => {
-    const handleStorageChange = () => {
-      const newSpotifyToken = localStorage.getItem("spotify_access_token");
-      const newYoutubeToken = localStorage.getItem("youtube_access_token");
-
-      setSpotifyToken(newSpotifyToken);
-      setYoutubeToken(newYoutubeToken);
-    };
-
-    // Listen for our custom token update events
-    window.addEventListener("tokenUpdate", handleStorageChange);
-
-    // Initial check
-    handleStorageChange();
-
-    return () => {
-      window.removeEventListener("tokenUpdate", handleStorageChange);
-    };
+    // Check if we just returned from OAuth with a session token
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionToken = urlParams.get('session_token');
+    
+    console.log('Login component - URL params:', window.location.search);
+    console.log('Login component - Session token from URL:', sessionToken);
+    
+    if (sessionToken) {
+      // Store the session token in localStorage
+      localStorage.setItem('session_token', sessionToken);
+      console.log('Login component - Session token stored in localStorage');
+      // Clean up the URL
+      window.history.replaceState({}, document.title, '/');
+    }
   }, []);
 
-  // Navigate to dashboard when both tokens are available
   useEffect(() => {
-    if (spotifyToken && youtubeToken) {
-      console.log("Both tokens available, navigating to dashboard...");
-      navigate("/");
+    const checkAuth = async () => {
+      try {
+        const sessionToken = localStorage.getItem('session_token');
+        console.log('Login component - Checking auth with session token:', sessionToken ? 'present' : 'missing');
+        const headers = sessionToken ? { 'x-session-token': sessionToken } : {};
+        
+        const [spotifyRes, youtubeRes] = await Promise.all([
+          fetch(`${API_BASE}/api/auth/spotify/status`, { 
+            credentials: 'include',
+            headers 
+          }),
+          fetch(`${API_BASE}/api/auth/youtube/status`, { 
+            credentials: 'include',
+            headers 
+          })
+        ]);
+        
+        const spotifyData = await spotifyRes.json();
+        const youtubeData = await youtubeRes.json();
+        
+        console.log('Login component - Auth status:', { spotify: spotifyData.authenticated, youtube: youtubeData.authenticated });
+        
+        setSpotifyAuth(spotifyData.authenticated);
+        setYoutubeAuth(youtubeData.authenticated);
+      } catch (error) {
+        console.error('Error checking auth:', error);
+      }
+    };
+
+    checkAuth();
+    const interval = setInterval(checkAuth, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (spotifyAuth && youtubeAuth) {
+      navigate("/dashboard");
     }
-  }, [spotifyToken, youtubeToken, navigate]);
+  }, [spotifyAuth, youtubeAuth, navigate]);
 
-  const handleSpotifyLogin = async () => {
-    const codeVerifier = btoa(
-      String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))),
-    )
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
+  const handleSpotifyLogin = () => {
+    window.location.href = `${API_BASE}/api/auth/spotify`;
+  };
 
-    const encoder = new TextEncoder();
-    const data = encoder.encode(codeVerifier);
-    const digest = await crypto.subtle.digest("SHA-256", data);
-    const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-
-    sessionStorage.setItem("spotify_code_verifier", codeVerifier);
-
-    const authUrl = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${SCOPES.join(" ")}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
-
-    window.location.href = authUrl;
+  const handleYouTubeLogin = () => {
+    window.location.href = `${API_BASE}/api/auth/youtube`;
   };
 
   return (
@@ -80,7 +84,7 @@ const Login = () => {
         <p>Convert your playlists seamlessly between music platforms</p>
 
         <div className="flex flex-col gap-4 mt-4">
-          {!spotifyToken && (
+          {!spotifyAuth && (
             <div className="text-center">
               <div className="flex items-center justify-center mb-3">
                 <img
@@ -93,7 +97,7 @@ const Login = () => {
             </div>
           )}
 
-          {spotifyToken && !youtubeToken && (
+          {spotifyAuth && !youtubeAuth && (
             <div className="text-center">
               <div className="flex items-center justify-center mb-3">
                 <img
@@ -102,13 +106,13 @@ const Login = () => {
                   className="youtube-logo"
                 />
               </div>
-              <button onClick={loginToYouTube} className="youtube">
+              <button onClick={handleYouTubeLogin} className="youtube">
                 Connect with YouTube
               </button>
             </div>
           )}
 
-          {spotifyToken && youtubeToken && (
+          {spotifyAuth && youtubeAuth && (
             <div className="text-center">
               <div className="status-success">
                 <span>✅</span>
@@ -123,3 +127,4 @@ const Login = () => {
 };
 
 export default Login;
+

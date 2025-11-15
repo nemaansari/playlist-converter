@@ -1,16 +1,3 @@
-/**
- * Playlist Conversion Component
- *
- * Handles the complete Spotify to YouTube playlist conversion process.
- * Features:
- * - Fetches Spotify playlist tracks via Web API
- * - Searches for matching YouTube videos using Data API
- * - Creates new YouTube playlist with converted tracks
- * - Real-time progress tracking and detailed result reporting
- * - Comprehensive error handling and token validation
- * - Debug tools for troubleshooting authentication issues
- */
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { searchYouTube } from "../youtubeSearch";
@@ -23,8 +10,9 @@ import {
   clearYouTubeAuth,
 } from "../youtubeAuth";
 
+const API_BASE = 'http://localhost:3000';
+
 const Conversion = () => {
-  // Extract playlist ID from URL parameters
   const { playlistId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,34 +34,37 @@ const Conversion = () => {
   // Get playlist name from navigation state or use fallback
   const playlistName = location.state?.name || `Unknown Playlist`;
 
-  const token = localStorage.getItem("spotify_access_token");
-
   useEffect(() => {
-    if (!token) {
-      navigate("/");
-      return;
-    }
-
     const fetchTracks = async () => {
       try {
+        const sessionToken = localStorage.getItem('session_token');
+        const headers = sessionToken ? { 'x-session-token': sessionToken } : {};
+        
+        // Fetch tracks via backend proxy
         const response = await fetch(
-          `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+          `${API_BASE}/api/spotify/playlist/${playlistId}/tracks`,
           {
-            headers: { Authorization: `Bearer ${token}` },
-          },
+            credentials: 'include',
+            headers
+          }
         );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch tracks');
+        }
 
         const data = await response.json();
         setTracks(data.items);
       } catch (error) {
         console.error("Error fetching tracks:", error);
+        navigate("/");
       } finally {
         setLoading(false);
       }
     };
 
     fetchTracks();
-  }, [playlistId, token, navigate]);
+  }, [playlistId, navigate]);
 
   const handleYouTubeLogin = () => {
     sessionStorage.setItem("youtube_return_playlist", playlistId);

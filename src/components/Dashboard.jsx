@@ -1,56 +1,105 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = 'http://localhost:3000';
+
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [playlists, setPlaylists] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const spotifyToken = localStorage.getItem("spotify_access_token");
-  const youtubeToken = localStorage.getItem("youtube_access_token");
-
   useEffect(() => {
-    if (spotifyToken) {
-      fetch("https://api.spotify.com/v1/me", {
-        headers: { Authorization: `Bearer ${spotifyToken}` },
-      })
-        .then((res) => {
-          console.log("API status:", res.status);
-          if (!res.ok) {
-            throw new Error(`API error: ${res.status}`);
-          }
-          return res.json();
-        })
-        .then((data) => {
-          console.log("User data received:", data);
-          setUser(data);
-        })
-        .catch((err) => {
-          console.log("Fetch error:", err);
-          localStorage.removeItem("spotify_access_token");
-          window.location.reload();
-        });
+    // Check authentication status
+    const checkAuthAndFetchData = async () => {
+      try {
+        const sessionToken = localStorage.getItem('session_token');
+        const headers = sessionToken ? { 'x-session-token': sessionToken } : {};
+        
+        // Check if user is authenticated
+        const [spotifyRes, youtubeRes] = await Promise.all([
+          fetch(`${API_BASE}/api/auth/spotify/status`, { 
+            credentials: 'include',
+            headers 
+          }),
+          fetch(`${API_BASE}/api/auth/youtube/status`, { 
+            credentials: 'include',
+            headers 
+          })
+        ]);
+        
+        const spotifyData = await spotifyRes.json();
+        const youtubeData = await youtubeRes.json();
+        
+        // If not authenticated, redirect to login
+        if (!spotifyData.authenticated || !youtubeData.authenticated) {
+          navigate("/");
+          return;
+        }
 
-      fetch("https://api.spotify.com/v1/me/playlists?limit=20", {
-        headers: { Authorization: `Bearer ${spotifyToken}` },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setPlaylists(data.items || []);
-        })
-        .catch((err) => {
-          console.log("Playlist fetch error", err);
+        // Fetch user profile via backend
+        const userRes = await fetch(`${API_BASE}/api/spotify/me`, {
+          credentials: 'include',
+          headers
         });
+        
+        console.log('User profile response status:', userRes.status);
+        
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          console.log('User data received:', userData);
+          setUser(userData);
+        } else {
+          console.error('Failed to fetch user profile:', await userRes.text());
+        }
+
+        // Fetch playlists via backend
+        const playlistsRes = await fetch(`${API_BASE}/api/spotify/playlists`, {
+          credentials: 'include',
+          headers
+        });
+        
+        console.log('Playlists response status:', playlistsRes.status);
+        
+        if (playlistsRes.ok) {
+          const playlistsData = await playlistsRes.json();
+          console.log('Playlists data received:', playlistsData);
+          setPlaylists(playlistsData.items || []);
+        } else {
+          console.error('Failed to fetch playlists:', await playlistsRes.text());
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setLoading(false);
+      }
+    };
+
+    checkAuthAndFetchData();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      navigate("/");
+    } catch (err) {
+      console.error("Logout error:", err);
+      navigate("/");
     }
-  }, [spotifyToken]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("spotify_access_token");
-    window.location.reload();
   };
 
-  if (!spotifyToken || !youtubeToken) {
-    return <div>Please log in to both Spotify and YouTube</div>;
+  if (loading) {
+    return (
+      <div className="center-page">
+        <div className="loading">
+          <p>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

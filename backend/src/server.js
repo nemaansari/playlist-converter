@@ -3,29 +3,38 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import spotifyAuthRoutes from './routes/spotifyAuth.js';
+import youtubeAuthRoutes from './routes/youtubeAuth.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS must be configured BEFORE other middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  origin: process.env.FRONTEND_URL || 'http://127.0.0.1:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-token']
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Session configuration with proper cookie settings
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: false, // Changed to false - only save when modified
+  name: 'playlist_converter_session', // Custom name for the session cookie
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000
+    secure: false, // Set to false for local development (http)
+    httpOnly: false, // Allow JavaScript access for debugging
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/'
   }
 }));
 
@@ -43,6 +52,10 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+app.use('/api/auth', spotifyAuthRoutes);
+app.use('/api/auth', youtubeAuthRoutes);
+app.use('/api', spotifyAuthRoutes); // Mount at /api since routes already have /spotify/ prefix
 
 app.listen(PORT, () => {
   console.log(`\nServer running on http://localhost:${PORT}\n`);
