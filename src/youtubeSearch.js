@@ -1,5 +1,3 @@
-import { YOUTUBE_API_KEY, SEARCH_ENDPOINT } from "./youtubeConfig.js";
-
 export const searchYouTube = async (query) => {
   const url = `http://localhost:3000/api/auth/youtube/search?q=${encodeURIComponent(query)}`;
 
@@ -11,8 +9,7 @@ export const searchYouTube = async (query) => {
       return null;
     }
     
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("Search failed:", error);
     return null;

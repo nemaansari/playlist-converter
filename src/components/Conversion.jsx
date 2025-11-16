@@ -116,7 +116,6 @@ const Conversion = () => {
     });
 
     try {
-      console.log("Creating YouTube playlist...");
       const playlistResponse = await createYouTubePlaylist(
         `${playlistName} (from Spotify)`,
         `Converted from Spotify playlist: ${playlistName}`,
@@ -129,7 +128,6 @@ const Conversion = () => {
       }
 
       const youtubePlaylistId = playlistResponse.id;
-      console.log("Created playlist with ID:", youtubePlaylistId);
 
       setConversionState((prev) => ({
         ...prev,
@@ -144,13 +142,9 @@ const Conversion = () => {
         const track = tracks[i].track;
         const searchQuery = `${track.name} ${track.artists[0].name}`;
 
-        console.log(`Converting ${i + 1}/${totalTracks}: ${searchQuery}`);
-
         try {
           // Search for the track on YouTube
           const searchResult = await searchYouTube(searchQuery);
-          
-          console.log('Search result for', searchQuery, ':', searchResult);
 
           if (searchResult && searchResult.id && searchResult.id.videoId) {
             // Add to YouTube playlist
@@ -207,8 +201,6 @@ const Conversion = () => {
         ...prev,
         isConverting: false,
       }));
-
-      console.log("Conversion completed!");
     } catch (error) {
       console.error("Conversion failed:", error);
       setConversionState((prev) => ({

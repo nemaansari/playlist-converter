@@ -29,9 +29,6 @@ router.get('/youtube', (req, res) => {
   // Auto-cleanup after 10 minutes
   setTimeout(() => stateStore.delete(state), 10 * 60 * 1000);
   
-  console.log('YouTube OAuth - Session Token:', req.session.sessionToken);
-  console.log('YouTube OAuth - State:', state);
-  
   const params = new URLSearchParams({
     client_id: process.env.YOUTUBE_CLIENT_ID,
     redirect_uri: process.env.YOUTUBE_REDIRECT_URI,
@@ -47,9 +44,6 @@ router.get('/youtube', (req, res) => {
 
 router.get('/youtube/callback', async (req, res) => {
   const { code, error, state } = req.query;
-  
-  console.log('YouTube callback received. State:', state);
-  console.log('YouTube callback - Session ID:', req.sessionID);
   
   if (error) {
     return res.redirect(`${process.env.FRONTEND_URL}?error=${error}`);
@@ -74,8 +68,6 @@ router.get('/youtube/callback', async (req, res) => {
   const sessionToken = storedData.sessionToken;
   stateStore.delete(state); // Use once and delete
   
-  console.log('YouTube callback - Retrieved session token:', sessionToken);
-  
   try {
     const response = await fetch(YOUTUBE_TOKEN_URL, {
       method: 'POST',
@@ -98,8 +90,6 @@ router.get('/youtube/callback', async (req, res) => {
       return res.redirect(`${process.env.FRONTEND_URL}?error=token_exchange_failed`);
     }
     
-    console.log('YouTube token exchange successful');
-    
     // Ensure session has the session token
     if (!req.session.sessionToken) {
       req.session.sessionToken = sessionToken;
@@ -112,15 +102,11 @@ router.get('/youtube/callback', async (req, res) => {
       youtube_token_expiry: Date.now() + (data.expires_in * 1000)
     });
     
-    console.log('YouTube token received, storing with session token:', sessionToken);
-    console.log('Session store now has:', await getSessionCount(), 'sessions');
-    
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err);
         return res.redirect(`${process.env.FRONTEND_URL}?error=session_save_failed`);
       }
-      console.log('Session saved, redirecting to frontend with auth token');
       
       // Redirect with the session token
       res.redirect(`${process.env.FRONTEND_URL}?auth=success&session_token=${sessionToken}`);
@@ -138,23 +124,11 @@ router.get('/youtube/status', async (req, res) => {
                        req.headers['x-session-token'] || 
                        req.query.session_token;
   
-  console.log('YouTube Status check - Session Token:', sessionToken);
-  console.log('YouTube Status check - Session Store has:', await getSessionCount(), 'sessions');
-  
   if (!sessionToken) {
-    console.log('No session token in request');
     return res.json({ authenticated: false });
   }
   
   const userSession = await getUserSession(sessionToken);
-  console.log('YouTube Status check - User session found:', !!userSession);
-  
-  if (userSession) {
-    console.log('YouTube Session data:', {
-      hasYouTubeToken: !!userSession.youtube_access_token,
-      expiresAt: userSession.youtube_token_expiry
-    });
-  }
   
   if (!userSession || !userSession.youtube_access_token) {
     return res.json({ authenticated: false });
@@ -248,6 +222,8 @@ router.post('/youtube/playlists/create', async (req, res) => {
     );
     
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error('YouTube API error:', errorData);
       throw new Error(`YouTube API error: ${response.status}`);
     }
     
@@ -317,6 +293,11 @@ router.get('/youtube/search', async (req, res) => {
     return res.status(400).json({ error: 'Search query required' });
   }
   
+  if (!process.env.YOUTUBE_API_KEY) {
+    console.error('YOUTUBE_API_KEY is not set in environment variables!');
+    return res.status(500).json({ error: 'YouTube API key not configured' });
+  }
+  
   try {
     const url = 
       `https://www.googleapis.com/youtube/v3/search?` +
@@ -329,11 +310,15 @@ router.get('/youtube/search', async (req, res) => {
     const response = await fetch(url);
     
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error('YouTube API error:', errorData);
       throw new Error(`YouTube API error: ${response.status}`);
     }
     
     const data = await response.json();
-    res.json(data.items?.[0] || null);
+    const result = data.items?.[0] || null;
+    
+    res.json(result);
   } catch (error) {
     console.error('Error searching YouTube:', error);
     res.status(500).json({ error: 'Failed to search' });
