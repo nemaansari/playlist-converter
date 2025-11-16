@@ -22,15 +22,6 @@ export const loginToYouTube = () => {
   window.location.href = 'http://localhost:3000/api/auth/youtube';
 };
 
-export const clearYouTubeAuth = () => {
-  localStorage.removeItem("youtube_access_token");
-  localStorage.removeItem("youtube_refresh_token");
-  localStorage.removeItem("youtube_token_expiry");
-  sessionStorage.removeItem("youtube_return_playlist");
-  sessionStorage.removeItem("youtube_return_playlist_name");
-  console.log("YouTube authentication data cleared");
-};
-
 export const createYouTubePlaylist = async (name, description = "") => {
   const sessionToken = localStorage.getItem('session_token');
   

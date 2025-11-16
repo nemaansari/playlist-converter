@@ -85,9 +85,11 @@ const Dashboard = () => {
         method: 'POST',
         credentials: 'include'
       });
+      localStorage.removeItem('session_token');
       navigate("/");
     } catch (err) {
       console.error("Logout error:", err);
+      localStorage.removeItem('session_token');
       navigate("/");
     }
   };

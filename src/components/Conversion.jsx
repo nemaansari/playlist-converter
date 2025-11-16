@@ -6,7 +6,6 @@ import {
   loginToYouTube,
   createYouTubePlaylist,
   addVideoToPlaylist,
-  clearYouTubeAuth,
 } from "../youtubeAuth";
 
 const API_BASE = 'http://localhost:3000';
@@ -232,39 +231,21 @@ const Conversion = () => {
                 <span>✅</span>
                 <span>Connected to YouTube</span>
               </div>
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={async () => {
-                    console.log("Testing YouTube connection...");
-                    const isLoggedIn = await isYouTubeLoggedIn();
-                    if (isLoggedIn) {
-                      alert("YouTube connection is valid!");
-                    } else {
-                      alert("Not connected to YouTube. Please login.");
-                    }
-                  }}
-                  className="secondary"
-                  style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}
-                >
-                  Test Connection
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm("Clear YouTube authentication and re-login?")) {
-                      clearYouTubeAuth();
-                      window.location.reload();
-                    }
-                  }}
-                  className="secondary"
-                  style={{
-                    fontSize: "0.875rem",
-                    padding: "0.5rem 1rem",
-                    background: "var(--accent-red)",
-                  }}
-                >
-                  Clear Auth
-                </button>
-              </div>
+              <button
+                onClick={async () => {
+                  console.log("Testing YouTube connection...");
+                  const isLoggedIn = await isYouTubeLoggedIn();
+                  if (isLoggedIn) {
+                    alert("YouTube connection is valid!");
+                  } else {
+                    alert("Not connected to YouTube. Please login.");
+                  }
+                }}
+                className="secondary"
+                style={{ fontSize: "0.875rem", padding: "0.5rem 1rem" }}
+              >
+                Test Connection
+              </button>
             </div>
           ) : (
             <div className="text-center">
