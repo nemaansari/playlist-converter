@@ -208,4 +208,136 @@ router.post('/youtube/refresh', async (req, res) => {
   }
 });
 
+router.post('/youtube/playlists/create', async (req, res) => {
+  const sessionToken = req.session.sessionToken || 
+                       req.headers['x-session-token'] || 
+                       req.query.session_token;
+  
+  if (!sessionToken) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  const userSession = await getUserSession(sessionToken);
+  
+  if (!userSession || !userSession.youtube_access_token) {
+    return res.status(401).json({ error: 'No YouTube token found' });
+  }
+  
+  const { name, description } = req.body;
+  
+  try {
+    const response = await fetch(
+      'https://www.googleapis.com/youtube/v3/playlists?part=snippet,status',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userSession.youtube_access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          snippet: {
+            title: name,
+            description: description || '',
+            defaultLanguage: 'en'
+          },
+          status: {
+            privacyStatus: 'private'
+          }
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Error creating YouTube playlist:', error);
+    res.status(500).json({ error: 'Failed to create playlist' });
+  }
+});
+
+router.post('/youtube/playlists/:playlistId/add', async (req, res) => {
+  const sessionToken = req.session.sessionToken || 
+                       req.headers['x-session-token'] || 
+                       req.query.session_token;
+  
+  if (!sessionToken) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  const userSession = await getUserSession(sessionToken);
+  
+  if (!userSession || !userSession.youtube_access_token) {
+    return res.status(401).json({ error: 'No YouTube token found' });
+  }
+  
+  const { playlistId } = req.params;
+  const { videoId } = req.body;
+  
+  try {
+    const response = await fetch(
+      'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userSession.youtube_access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          snippet: {
+            playlistId: playlistId,
+            resourceId: {
+              kind: 'youtube#video',
+              videoId: videoId
+            }
+          }
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Error adding video to playlist:', error);
+    res.status(500).json({ error: 'Failed to add video' });
+  }
+});
+
+router.get('/youtube/search', async (req, res) => {
+  const { q } = req.query;
+  
+  if (!q) {
+    return res.status(400).json({ error: 'Search query required' });
+  }
+  
+  try {
+    const url = 
+      `https://www.googleapis.com/youtube/v3/search?` +
+      `part=snippet&` +
+      `q=${encodeURIComponent(q)}&` +
+      `type=video&` +
+      `maxResults=1&` +
+      `key=${process.env.YOUTUBE_API_KEY}`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    res.json(data.items?.[0] || null);
+  } catch (error) {
+    console.error('Error searching YouTube:', error);
+    res.status(500).json({ error: 'Failed to search' });
+  }
+});
+
 export default router;

@@ -6,7 +6,6 @@ import {
   loginToYouTube,
   createYouTubePlaylist,
   addVideoToPlaylist,
-  testYouTubeToken,
   clearYouTubeAuth,
 } from "../youtubeAuth";
 
@@ -117,19 +116,6 @@ const Conversion = () => {
     });
 
     try {
-      // Test YouTube token first
-      console.log("Testing YouTube token...");
-      const tokenTest = await testYouTubeToken();
-
-      if (!tokenTest.valid) {
-        throw new Error(
-          `YouTube authentication invalid: ${tokenTest.error}. Please re-login to YouTube.`,
-        );
-      }
-
-      console.log("YouTube token is valid, proceeding with conversion...");
-
-      // Step 1: Create YouTube playlist
       console.log("Creating YouTube playlist...");
       const playlistResponse = await createYouTubePlaylist(
         `${playlistName} (from Spotify)`,
@@ -163,6 +149,8 @@ const Conversion = () => {
         try {
           // Search for the track on YouTube
           const searchResult = await searchYouTube(searchQuery);
+          
+          console.log('Search result for', searchQuery, ':', searchResult);
 
           if (searchResult && searchResult.id && searchResult.id.videoId) {
             // Add to YouTube playlist
@@ -255,13 +243,12 @@ const Conversion = () => {
               <div className="flex gap-2 justify-center">
                 <button
                   onClick={async () => {
-                    console.log("Testing YouTube token...");
-                    const test = await testYouTubeToken();
-                    console.log("Token test result:", test);
-                    if (test.valid) {
-                      alert("YouTube token is valid!");
+                    console.log("Testing YouTube connection...");
+                    const isLoggedIn = await isYouTubeLoggedIn();
+                    if (isLoggedIn) {
+                      alert("YouTube connection is valid!");
                     } else {
-                      alert(`YouTube token error: ${test.error}`);
+                      alert("Not connected to YouTube. Please login.");
                     }
                   }}
                   className="secondary"

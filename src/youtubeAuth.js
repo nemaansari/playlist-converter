@@ -194,97 +194,55 @@ export const refreshYouTubeToken = async () => {
 };
 
 export const createYouTubePlaylist = async (name, description = "") => {
-  const token = localStorage.getItem("youtube_access_token");
-
-  if (!token) {
-    throw new Error(
-      "No YouTube access token found. Please login to YouTube first.",
-    );
+  const sessionToken = localStorage.getItem('session_token');
+  
+  if (!sessionToken) {
+    throw new Error('Not authenticated. Please login to YouTube first.');
   }
-
-  console.log(
-    "Creating YouTube playlist with token:",
-    token ? "Token exists" : "No token",
-  );
-  console.log("Playlist name:", name);
 
   const response = await fetch(
-    "https://www.googleapis.com/youtube/v3/playlists?part=snippet,status",
+    'http://localhost:3000/api/auth/youtube/playlists/create',
     {
-      method: "POST",
+      method: 'POST',
+      credentials: 'include',
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
+        'x-session-token': sessionToken
       },
-      body: JSON.stringify({
-        snippet: {
-          title: name,
-          description: description,
-          defaultLanguage: "en",
-        },
-        status: {
-          privacyStatus: "private",
-        },
-      }),
-    },
+      body: JSON.stringify({ name, description })
+    }
   );
 
-  const data = await response.json();
-
-  console.log("YouTube API Response:", data);
-  console.log("Response status:", response.status);
-
-  // Handle token expiry
-  if (data.error && data.error.code === 401) {
-    console.log("Token expired, attempting refresh...");
-    const refreshed = await refreshYouTubeToken();
-    if (refreshed) {
-      console.log("Token refreshed, retrying playlist creation...");
-      // Retry with new token
-      return createYouTubePlaylist(name, description);
-    } else {
-      throw new Error(
-        "YouTube token expired and refresh failed. Please re-authenticate.",
-      );
-    }
+  if (!response.ok) {
+    throw new Error('Failed to create playlist');
   }
 
-  return data;
+  return await response.json();
 };
 
 export const addVideoToPlaylist = async (playlistId, videoId) => {
-  const token = localStorage.getItem("youtube_access_token");
-
-  const response = await fetch(
-    "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        snippet: {
-          playlistId: playlistId,
-          resourceId: {
-            kind: "youtube#video",
-            videoId: videoId,
-          },
-        },
-      }),
-    },
-  );
-
-  const data = await response.json();
-
-  // Handle token expiry
-  if (data.error && data.error.code === 401) {
-    const refreshed = await refreshYouTubeToken();
-    if (refreshed) {
-      // Retry with new token
-      return addVideoToPlaylist(playlistId, videoId);
-    }
+  const sessionToken = localStorage.getItem('session_token');
+  
+  if (!sessionToken) {
+    throw new Error('Not authenticated');
   }
 
-  return data;
+  const response = await fetch(
+    `http://localhost:3000/api/auth/youtube/playlists/${playlistId}/add`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-session-token': sessionToken
+      },
+      body: JSON.stringify({ videoId })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to add video');
+  }
+
+  return await response.json();
 };
