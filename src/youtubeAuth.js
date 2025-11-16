@@ -1,11 +1,3 @@
-/**
- * YouTube Authentication and API Integration
- *
- * Comprehensive YouTube OAuth2 flow management and API operations.
- * Handles authentication, token management, playlist creation, and video addition.
- * Includes extensive debugging and error recovery mechanisms.
- */
-
 import {
   YOUTUBE_CLIENT_ID,
   YOUTUBE_CLIENT_SECRET,
@@ -15,42 +7,28 @@ import {
   YOUTUBE_SCOPES,
 } from "./youtubeConfig.js";
 
-/**
- * Check if user is authenticated with YouTube
- * @returns {boolean} - True if access token exists in localStorage
- */
-export const isYouTubeLoggedIn = () => {
-  return !!localStorage.getItem("youtube_access_token");
+export const isYouTubeLoggedIn = async () => {
+  try {
+    const sessionToken = localStorage.getItem('session_token');
+    if (!sessionToken) return false;
+    
+    const response = await fetch('http://localhost:3000/api/auth/youtube/status', {
+      credentials: 'include',
+      headers: {
+        'x-session-token': sessionToken
+      }
+    });
+    
+    const data = await response.json();
+    return data.authenticated;
+  } catch (error) {
+    console.error('Error checking YouTube login:', error);
+    return false;
+  }
 };
 
-/**
- * Initiate YouTube OAuth2 authentication flow
- * Validates environment configuration and redirects to Google OAuth
- */
-export const loginToYouTube = async () => {
-  // Debug environment variables to catch configuration issues
-  console.log("YouTube Config Check:");
-  console.log("Client ID:", YOUTUBE_CLIENT_ID);
-  console.log("Client Secret exists:", !!YOUTUBE_CLIENT_SECRET);
-  console.log("Redirect URI:", YOUTUBE_REDIRECT_URI);
-  console.log("Scopes:", YOUTUBE_SCOPES);
-
-  if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET) {
-    alert(
-      "YouTube configuration is missing. Please check your environment variables.",
-    );
-    return;
-  }
-
-  const authUrl =
-    `${YOUTUBE_AUTH_ENDPOINT}?` +
-    `client_id=${YOUTUBE_CLIENT_ID}&` +
-    `redirect_uri=${encodeURIComponent(YOUTUBE_REDIRECT_URI)}&` +
-    `response_type=code&` +
-    `scope=${encodeURIComponent(YOUTUBE_SCOPES.join(" "))}`;
-
-  console.log("Redirecting to:", authUrl);
-  window.location.href = authUrl;
+export const loginToYouTube = () => {
+  window.location.href = 'http://localhost:3000/api/auth/youtube';
 };
 
 export const handleYouTubeCallback = async (code) => {

@@ -17,21 +17,19 @@ const Conversion = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Component state management
-  const [tracks, setTracks] = useState([]); // Spotify tracks from the playlist
-  const [loading, setLoading] = useState(true); // Initial data loading state
-  const [testResult, setTestResult] = useState(null); // Results from test search
+  const [tracks, setTracks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [testResult, setTestResult] = useState(null);
+  const [isYouTubeAuthenticated, setIsYouTubeAuthenticated] = useState(false);
 
-  // Comprehensive conversion state tracking
   const [conversionState, setConversionState] = useState({
-    isConverting: false, // Whether conversion is currently running
-    progress: 0, // Percentage completion (0-100)
-    results: [], // Array of per-track conversion results
-    playlistId: null, // Created YouTube playlist ID
-    error: null, // Any conversion errors
+    isConverting: false,
+    progress: 0,
+    results: [],
+    playlistId: null,
+    error: null,
   });
 
-  // Get playlist name from navigation state or use fallback
   const playlistName = location.state?.name || `Unknown Playlist`;
 
   useEffect(() => {
@@ -66,6 +64,15 @@ const Conversion = () => {
     fetchTracks();
   }, [playlistId, navigate]);
 
+  useEffect(() => {
+    const checkYouTubeAuth = async () => {
+      const authenticated = await isYouTubeLoggedIn();
+      setIsYouTubeAuthenticated(authenticated);
+    };
+    
+    checkYouTubeAuth();
+  }, []);
+
   const handleYouTubeLogin = () => {
     sessionStorage.setItem("youtube_return_playlist", playlistId);
     sessionStorage.setItem("youtube_return_playlist_name", playlistName);
@@ -96,7 +103,7 @@ const Conversion = () => {
   };
 
   const convertPlaylist = async () => {
-    if (!isYouTubeLoggedIn()) {
+    if (!await isYouTubeLoggedIn()) {
       alert("Please login to YouTube first");
       return;
     }
@@ -239,7 +246,7 @@ const Conversion = () => {
         <p className="text-muted">Found {tracks.length} tracks</p>
 
         <div className="mt-4">
-          {isYouTubeLoggedIn() ? (
+          {isYouTubeAuthenticated ? (
             <div className="text-center">
               <div className="status-success mb-3">
                 <span>✅</span>
@@ -293,7 +300,7 @@ const Conversion = () => {
           )}
         </div>
 
-        {tracks.length > 0 && isYouTubeLoggedIn() && (
+        {tracks.length > 0 && isYouTubeAuthenticated && (
           <div className="mt-4">
             <button
               onClick={testYouTubeSearch}
