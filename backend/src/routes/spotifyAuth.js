@@ -1,6 +1,6 @@
 import express from 'express';
 import crypto from 'crypto';
-import { getUserSession, updateUserSession, deleteUserSession, getSessionCount } from '../sessionStore.js';
+import { getUserSession, updateUserSession, deleteUserSession } from '../sessionStore.js';
 
 const router = express.Router();
 
@@ -26,12 +26,10 @@ router.get('/spotify', (req, res) => {
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = generateCodeChallenge(codeVerifier);
   
-  // Generate a unique session token if it doesn't exist
   if (!req.session.sessionToken) {
     req.session.sessionToken = crypto.randomBytes(32).toString('base64url');
   }
   
-  // Generate a state parameter to track this auth flow
   const state = crypto.randomBytes(16).toString('base64url');
   
   // Store BOTH verifier and session token with state as key
@@ -41,11 +39,6 @@ router.get('/spotify', (req, res) => {
     timestamp: Date.now() 
   });
   setTimeout(() => pkceStore.delete(state), 10 * 60 * 1000);
-  
-  console.log('Spotify OAuth - Redirect URI:', process.env.SPOTIFY_REDIRECT_URI);
-  console.log('Spotify OAuth - Client ID:', process.env.SPOTIFY_CLIENT_ID);
-  console.log('Session Token:', req.session.sessionToken);
-  console.log('State:', state);
   
   const params = new URLSearchParams({
     client_id: process.env.SPOTIFY_CLIENT_ID,
@@ -65,7 +58,6 @@ router.get('/spotify', (req, res) => {
 router.get('/spotify/callback', async (req, res) => {
   const { code, error, state } = req.query;
   
-  console.log('Callback received. State:', state);
   
   if (error) {
     return res.redirect(`${process.env.FRONTEND_URL}?error=${error}`);
@@ -79,11 +71,9 @@ router.get('/spotify/callback', async (req, res) => {
     return res.redirect(`${process.env.FRONTEND_URL}?error=no_state`);
   }
   
-  // Retrieve verifier from store
   const storedData = pkceStore.get(state);
   
   if (!storedData) {
-    console.error('No verifier found for state:', state);
     return res.redirect(`${process.env.FRONTEND_URL}?error=no_verifier`);
   }
   
@@ -91,8 +81,6 @@ router.get('/spotify/callback', async (req, res) => {
   const storedSessionToken = storedData.sessionToken;
   pkceStore.delete(state); // Use once and delete
   
-  console.log('Code verifier retrieved successfully');
-  console.log('Stored session token:', storedSessionToken);
   
   try {
     const response = await fetch(SPOTIFY_TOKEN_URL, {
@@ -112,11 +100,9 @@ router.get('/spotify/callback', async (req, res) => {
     const data = await response.json();
     
     if (data.error) {
-      console.error('Spotify token error:', data);
       return res.redirect(`${process.env.FRONTEND_URL}?error=token_exchange_failed`);
     }
     
-    // Use the stored session token from the initial request
     if (!req.session.sessionToken) {
       req.session.sessionToken = storedSessionToken;
     }
@@ -130,19 +116,12 @@ router.get('/spotify/callback', async (req, res) => {
       spotify_token_expiry: Date.now() + (data.expires_in * 1000)
     });
     
-    console.log('Token received, storing with session token:', sessionToken);
-    console.log('Session store now has:', await getSessionCount(), 'sessions');
     
-    // Save session and redirect with session token
     req.session.save((err) => {
       if (err) {
-        console.error('Session save error:', err);
         return res.redirect(`${process.env.FRONTEND_URL}?error=session_save_failed`);
       }
-      console.log('Session saved, session ID:', req.sessionID);
-      console.log('Redirecting to frontend with auth token');
       
-      // Redirect with the session token so frontend can use it
       res.redirect(`${process.env.FRONTEND_URL}?auth=success&session_token=${sessionToken}`);
     });
     
@@ -153,30 +132,17 @@ router.get('/spotify/callback', async (req, res) => {
 });
 
 router.get('/spotify/status', async (req, res) => {
-  // Try to get session token from multiple sources
   const sessionToken = req.session.sessionToken || 
                        req.headers['x-session-token'] || 
                        req.query.session_token;
   
-  console.log('Status check - Session ID:', req.sessionID);
-  console.log('Status check - Session Token:', sessionToken);
-  console.log('Status check - Session Store has:', await getSessionCount(), 'sessions');
   
   if (!sessionToken) {
-    console.log('No session token in request');
     return res.json({ authenticated: false });
   }
   
   const userSession = await getUserSession(sessionToken);
-  console.log('Status check - User session found:', !!userSession);
-  
-  if (userSession) {
-    console.log('Session data:', {
-      hasSpotifyToken: !!userSession.spotify_access_token,
-      expiresAt: userSession.spotify_token_expiry
-    });
-  }
-  
+
   if (!userSession || !userSession.spotify_access_token) {
     return res.json({ authenticated: false });
   }
@@ -274,36 +240,49 @@ router.get('/spotify/playlists', async (req, res) => {
   }
 });
 
-// Proxy endpoint to get playlist tracks
+// Proxy endpoint to get playlist tracks (with pagination support)
 router.get('/spotify/playlist/:playlistId/tracks', async (req, res) => {
-  const sessionToken = req.session.sessionToken || 
-                       req.headers['x-session-token'] || 
+  const sessionToken = req.session.sessionToken ||
+                       req.headers['x-session-token'] ||
                        req.query.session_token;
   const { playlistId } = req.params;
-  
+
   if (!sessionToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
-  
+
   const userSession = await getUserSession(sessionToken);
-  
+
   if (!userSession || !userSession.spotify_access_token) {
     return res.status(401).json({ error: 'No Spotify token found' });
   }
-  
+
   try {
-    const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-      headers: {
-        'Authorization': `Bearer ${userSession.spotify_access_token}`
+    // Fetch all tracks by handling pagination
+    let allTracks = [];
+    let nextUrl = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+
+    while (nextUrl) {
+      const response = await fetch(nextUrl, {
+        headers: {
+          'Authorization': `Bearer ${userSession.spotify_access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Spotify API error: ${response.status}`);
       }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Spotify API error: ${response.status}`);
+
+      const data = await response.json();
+      allTracks = allTracks.concat(data.items);
+      nextUrl = data.next; // Will be null when no more pages
     }
-    
-    const data = await response.json();
-    res.json(data);
+
+    // Return in the same format as the original API
+    res.json({
+      items: allTracks,
+      total: allTracks.length
+    });
   } catch (error) {
     console.error('Error fetching playlist tracks:', error);
     res.status(500).json({ error: 'Failed to fetch playlist tracks' });

@@ -1,6 +1,6 @@
 import express from 'express';
 import crypto from 'crypto';
-import { getUserSession, updateUserSession, getSessionCount } from '../sessionStore.js';
+import { getUserSession, updateUserSession } from '../sessionStore.js';
 
 const router = express.Router();
 
@@ -12,12 +12,10 @@ const SCOPES = ['https://www.googleapis.com/auth/youtube'];
 const stateStore = new Map();
 
 router.get('/youtube', (req, res) => {
-  // Generate or reuse session token
   if (!req.session.sessionToken) {
     req.session.sessionToken = crypto.randomBytes(32).toString('base64url');
   }
   
-  // Generate state parameter for CSRF protection
   const state = crypto.randomBytes(16).toString('base64url');
   
   // Store state with session token (instead of in session)
@@ -26,7 +24,6 @@ router.get('/youtube', (req, res) => {
     timestamp: Date.now()
   });
   
-  // Auto-cleanup after 10 minutes
   setTimeout(() => stateStore.delete(state), 10 * 60 * 1000);
   
   const params = new URLSearchParams({
@@ -57,7 +54,6 @@ router.get('/youtube/callback', async (req, res) => {
     return res.redirect(`${process.env.FRONTEND_URL}?error=no_state`);
   }
   
-  // Retrieve session token from state store
   const storedData = stateStore.get(state);
   
   if (!storedData) {
@@ -66,7 +62,7 @@ router.get('/youtube/callback', async (req, res) => {
   }
   
   const sessionToken = storedData.sessionToken;
-  stateStore.delete(state); // Use once and delete
+  stateStore.delete(state);
   
   try {
     const response = await fetch(YOUTUBE_TOKEN_URL, {
@@ -86,11 +82,9 @@ router.get('/youtube/callback', async (req, res) => {
     const data = await response.json();
     
     if (data.error) {
-      console.error('YouTube token error:', data);
       return res.redirect(`${process.env.FRONTEND_URL}?error=token_exchange_failed`);
     }
     
-    // Ensure session has the session token
     if (!req.session.sessionToken) {
       req.session.sessionToken = sessionToken;
     }
@@ -119,7 +113,6 @@ router.get('/youtube/callback', async (req, res) => {
 });
 
 router.get('/youtube/status', async (req, res) => {
-  // Try to get session token from multiple sources
   const sessionToken = req.session.sessionToken || 
                        req.headers['x-session-token'] || 
                        req.query.session_token;

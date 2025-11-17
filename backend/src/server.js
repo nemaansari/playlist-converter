@@ -23,12 +23,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Session configuration with proper cookie settings
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave: false,
-  saveUninitialized: false, // Changed to false - only save when modified
-  name: 'playlist_converter_session', // Custom name for the session cookie
+  saveUninitialized: false,
+  name: 'playlist_converter_session',
   cookie: {
     secure: false, // Set to false for local development (http)
     httpOnly: false, // Allow JavaScript access for debugging
@@ -55,13 +54,13 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', spotifyAuthRoutes);
 app.use('/api/auth', youtubeAuthRoutes);
-app.use('/api', spotifyAuthRoutes); // Mount at /api since routes already have /spotify/ prefix
+app.use('/api', spotifyAuthRoutes);
 
 app.listen(PORT, () => {
   console.log(`\nServer running on http://localhost:${PORT}\n`);
 });
 
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   console.error('Error:', err.message);
   res.status(err.status || 500).json({
     error: {

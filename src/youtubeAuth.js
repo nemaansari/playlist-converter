@@ -1,9 +1,11 @@
+import { API_CONFIG } from './config/api';
+
 export const isYouTubeLoggedIn = async () => {
   try {
     const sessionToken = localStorage.getItem('session_token');
     if (!sessionToken) return false;
     
-    const response = await fetch('http://localhost:3000/api/auth/youtube/status', {
+    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_YOUTUBE_STATUS}`, {
       credentials: 'include',
       headers: {
         'x-session-token': sessionToken
@@ -19,7 +21,7 @@ export const isYouTubeLoggedIn = async () => {
 };
 
 export const loginToYouTube = () => {
-  window.location.href = 'http://localhost:3000/api/auth/youtube';
+  window.location.href = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_YOUTUBE}`;
 };
 
 export const createYouTubePlaylist = async (name, description = "") => {
@@ -30,7 +32,7 @@ export const createYouTubePlaylist = async (name, description = "") => {
   }
 
   const response = await fetch(
-    'http://localhost:3000/api/auth/youtube/playlists/create',
+    `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.YOUTUBE_PLAYLISTS_CREATE}`,
     {
       method: 'POST',
       credentials: 'include',
@@ -57,7 +59,7 @@ export const addVideoToPlaylist = async (playlistId, videoId) => {
   }
 
   const response = await fetch(
-    `http://localhost:3000/api/auth/youtube/playlists/${playlistId}/add`,
+    `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.YOUTUBE_PLAYLISTS_ADD}/${playlistId}/add`,
     {
       method: 'POST',
       credentials: 'include',
