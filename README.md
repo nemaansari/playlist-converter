@@ -6,11 +6,11 @@ A full-stack web application that automates playlist migration from Spotify to Y
 
 - **Full-stack application** with automated playlist migration from Spotify to YouTube using intelligent track matching via YouTube Data API
 - **Secure OAuth 2.0 authentication** flow (PKCE for Spotify, standard OAuth for YouTube) with session management using Redis and Express middleware
-- **Responsive modern UI** with real-time conversion progress tracking, comprehensive error handling, and detailed per-track success/failure reporting
+- **Modern, responsive UI** with real-time conversion progress tracking, comprehensive error handling, and detailed per-track success/failure reporting
 
 ## ✨ Features
 
-- **Modern glassmorphism UI** with dark theme and smooth animations
+- **Modern, clean UI** with gradient accents and smooth animations
 - **Dual OAuth 2.0 authentication** (Spotify PKCE + YouTube)
 - **Automated playlist conversion** from Spotify to YouTube
 - **Intelligent track matching** using YouTube search
@@ -25,7 +25,7 @@ A full-stack web application that automates playlist migration from Spotify to Y
 - **Backend:** Node.js, Express, Redis
 - **APIs:** Spotify Web API, YouTube Data API v3
 - **Auth:** OAuth 2.0 (PKCE for Spotify, standard for YouTube)
-- **Styling:** Custom CSS (glassmorphism, dark mode)
+- **Styling:** Custom CSS with modern design system
 
 ## ⚡ Getting Started
 
@@ -99,23 +99,18 @@ Frontend runs on `http://localhost:5173`
 ### 7. Open in Browser
 Visit [http://localhost:5173](http://localhost:5173)
 
+## 🎬 Demo
+
+![App Demo](./public/demo.mp4)
+
+Watch the full conversion process from Spotify authentication to YouTube playlist creation.
+
 ## 📝 Usage
 
 1. **Login with Spotify** to authorize playlist access
 2. **Login with YouTube** to enable playlist creation
 3. **Select a Spotify playlist** and click "Convert to YouTube"
 4. **Track conversion progress** and view your new YouTube playlist
-
-## 📸 Screenshots
-
-### Login Page
-![Login with glassmorphism UI](./public/screenshots/login1.png)
-
-### Dashboard
-![Playlist selection dashboard](./public/screenshots/dashboard.png)
-
-### Conversion in Progress
-![Real-time conversion tracking](./public/screenshots/conversion.png)
 
 ## 🧑‍💻 Author
 
