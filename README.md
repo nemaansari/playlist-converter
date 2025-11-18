@@ -101,7 +101,7 @@ Visit [http://localhost:5173](http://localhost:5173)
 
 ## 🎬 Demo
 
-![App Demo](./public/demo.gif)
+[![Watch Demo](https://img.youtube.com/vi/7BMvPE5Pb8U/0.jpg)](https://www.youtube.com/watch?v=7BMvPE5Pb8U)
 
 Watch the full conversion process from Spotify authentication to YouTube playlist creation.
 
